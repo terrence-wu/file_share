@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from  sklearn.linear_model import LinearRegression
 
 # import_module1('~/TW_python/TW_color_normalization_htk.py', 'CN')
+__version__ = 'TW_20200614'
 
 def import_module1(pkgname, return_module=False):
 	#import os
