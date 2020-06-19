@@ -122,7 +122,8 @@ def TW_img2LR2(img_src, mask_excl=None):
     if is_false(mask_excl):
         mask_excl=None
     else:
-        print("Exclusion mask (background) area: %5.3f"%(mask_excl>0).mean())
+        #print("Exclusion mask (background) area: %5.3f"%(mask_excl>0).mean())
+        pass
     img_deconv = deconvolution_based_normalization(img_src, mask_out=mask_excl)
     LR_RGBw=image_normal_LR2(img_src, img_deconv, mask_excl=mask_excl)
     return LR_RGBw
