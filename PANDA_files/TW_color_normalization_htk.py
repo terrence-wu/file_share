@@ -716,6 +716,8 @@ def argpercentile(arr, p):
     i = int(p * arr.size + 0.5)
     return np.argpartition(arr, i)[i]
 
+######
+
 def image_normalization_LR(img_src, img_targ, mask_excl=None, mask_incl=None):
     assert np.all(img_src.shape[:2]==img_targ.shape[:2]), "Source and normalized imaged have different size"
     if mask_excl is not None:
@@ -787,6 +789,8 @@ def mask_white(imgw, min_rgb=200, max_diff=55, erosion=3):
         msk=scipy.ndimage.morphology.binary_dilation(msk, iterations=erosion)
     return(msk)
 
+###
+
 import cv2
 import matplotlib.pyplot as plt
 def saveimg(ofn, img):
@@ -845,5 +849,22 @@ def detect_tissue0(slide, sensitivity = 3000):
     mask = skimage.morphology.remove_small_objects(mask, min_size=sensitivity)
     
     mask = mask.astype(np.uint8)
-    
     return mask
+
+def read_tiff(ifn, is_mask=False, lvl=None):
+    try:
+        _=openslide.__version__
+    except:
+        import openslide
+    ifn=os.path.expanduser(ifn)
+    wsi=openslide.OpenSlide(ifn)
+    lvl_dims=wsi.level_dimensions
+    if lvl is None:
+        lvl=np.argmin([x[0] for x in lvl_dims])
+    if is_mask:
+        img1=np.asarray(wsi.read_region( (0,0), lvl, lvl_dims[lvl]))[:,:,0]
+    else:
+        img1=np.asarray(wsi.read_region( (0,0), lvl, lvl_dims[lvl]))[:,:,:3]
+    wsi.close()
+    return(img1)
+
