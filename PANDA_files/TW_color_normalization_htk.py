@@ -1,5 +1,5 @@
 ## Most codes from HistomicsTK
-## By TW on 2020-06-14
+## By TW on 2020-06-19
 
 import os
 import sys
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from  sklearn.linear_model import LinearRegression
 
 # import_module1('~/TW_python/TW_color_normalization_htk.py', 'CN')
-__version__ = 'TW_color_normalization_htk.py: 2020/06/14'
+__version__ = 'TW_color_normalization_htk.py: 2020/06/19'
 
 def import_module1(pkgname, return_module=False):
 	#import os
@@ -47,7 +47,7 @@ def import_module1(pkgname, return_module=False):
 
 import subprocess
 import sys
-def install_package1(package, force=False, upgrade=True):
+def install_package1(package, force=False, upgrade=True, verbose=True):
     #import subprocess
     #import sys
     tmplst=[sys.executable, "-m", "pip", "install"]
@@ -56,7 +56,17 @@ def install_package1(package, force=False, upgrade=True):
     if upgrade:
         tmplst.append('-U')
     tmplst.append(package)
+    if verbose:
+        print("!"+' '.join(tmplst))
     subprocess.check_call(tmplst)
+
+#######
+
+try:
+    import nimfa
+except:
+    install_package1('nimfa', force=False, upgrade=False, verbose=False)
+    import nimfa
 
 #######
 
@@ -102,6 +112,83 @@ _lms2lab = np.dot(
 
 _lms2rgb = np.linalg.inv(_rgb2lms)
 _lab2lms = np.linalg.inv(_lms2lab)
+
+from sklearn.linear_model import LinearRegression
+def TW_img2LR2(img_src, mask_excl=None):
+    if mask_excl is None or is_true(mask_excl):
+        mask_otsu=detect_tissue0(img_src)
+        mask_bgnd=mask_white(img_src)
+        mask_excl=np.logical_and(mask_bgnd, np.logical_not(mask_otsu))
+    if is_false(mask_excl):
+        mask_excl=None
+    else:
+        print("Exclusion mask (background) area: %5.3f"%(mask_excl>0).mean())
+    img_deconv = deconvolution_based_normalization(img_src, mask_out=mask_excl)
+    LR_RGBw=image_normal_LR2(img_src, img_deconv, mask_excl=mask_excl)
+    return LR_RGBw
+
+def TW_imgLRw2norm(img, LR_RGBw):
+    imgw=255.0-np.float32(image255(img))
+    imgw3=imgw.reshape(-1, 3)
+    im10norm=np.matmul(imgw3, LR_RGBw)
+    im10norm[im10norm<0]=0
+    im10norm[im10norm>255]=255
+    im10norm2=(255.0-im10norm).reshape(img.shape).astype(np.uint8)    
+    return(im10norm2)
+
+def image_normal_LR2(img_src, img_targ, mask_excl=None, mask_incl=None, 
+            min_rgb=200, max_diff=55, erosion=3):
+    
+    if isinstance(img_src, str):
+        img_src=plt.imread(os.path.expanduser(img_src))
+    
+    if isinstance(img_targ, str):
+        img_targ=plt.imread(os.path.expanduser(img_targ))
+    
+    assert np.all(img_src.shape[:2]==img_targ.shape[:2]), "Source and normalized imaged have different size"
+    
+    if is_true(mask_incl):
+        mask_incl=np.logical_not(mask_white(img_src, min_rgb=min_rgb, max_diff=max_diff, erosion=erosion))
+    if is_true(mask_excl):
+        mask_excl=mask_white(img_src, min_rgb=min_rgb, max_diff=max_diff, erosion=erosion)
+    
+    if mask_excl is not None:
+        assert np.all(img_src.shape[:2]==mask_excl.shape), "Mask_exclude has different size"
+    
+    if mask_incl is not None:
+        assert np.all(img_src.shape[:2]==mask_incl.shape), "Mask_include has different size"
+    
+    newdim=np.prod(img_src.shape[:2])
+    
+    thumb_arr3=np.float32(image255(img_src)).reshape((newdim, 3))
+    norm2_arr3=np.float32(image255(img_targ)).reshape((newdim, 3))
+    
+    if mask_incl is None and mask_excl is None:
+        mask_regr=np.full(newdim, True)
+    elif mask_excl is None:
+        mask_regr=(mask_incl>0).reshape(newdim)
+    elif mask_incl is None:
+        mask_regr=np.logical_not(mask_excl).reshape(newdim)
+    else:
+        mask_regr=np.logical_and(mask_incl, np.logical_not(mask_excl)).reshape(newdim)
+    
+    thumb_arr4=255.0-thumb_arr3[mask_regr, :]
+    norm2_arr4=255.0-norm2_arr3[mask_regr, :]
+    #thumb_arr5=np.c_[thumb_arr4, np.square(thumb_arr4)]
+    regressor2 = LinearRegression(fit_intercept=False)
+    regressor2.fit(thumb_arr4, norm2_arr4)
+    
+    LR_RGBw=regressor2.coef_.T
+    return(LR_RGBw)
+
+def img2normw2(img, LR_RGBw):
+    imgw=255.0-np.float32(image255(img))
+    imgw3=imgw.reshape(-1, 3)
+    im10norm=np.matmul(imgw3, LR_RGBw)
+    im10norm[im10norm<0]=0
+    im10norm[im10norm>255]=255
+    im10norm2=(255.0-im10norm).reshape(img.shape).astype(np.uint8)    
+    return(im10norm2)
 
 def TW_normalize_LR(img_src, mask_excl=None):
     img_reinhard = reinhard(
@@ -273,7 +360,7 @@ def deconvolution_based_normalization(
     
     # return masked values using unnormalized image
     if mask_out is not None:
-        keep_mask = np.not_equal(mask_out, True)
+        keep_mask = np.logical_not(mask_out)
         for i in range(3):
             original = im_src[:, :, i].copy()
             new = im_src_normalized[:, :, i].copy()
@@ -726,57 +813,37 @@ def is_false(v):
 def is_string(v):
     return(isinstance(v, str))
 
-from sklearn.linear_model import LinearRegression
-def image_norma_LR2(img_src, img_targ, mask_excl=None, mask_incl=None, 
-            min_rgb=200, max_diff=55, erosion=3):
-    
-    if isinstance(img_src, str):
-        img_src=plt.imread(os.path.expanduser(img_src))
-    
-    if isinstance(img_targ, str):
-        img_targ=plt.imread(os.path.expanduser(img_targ))
-    
-    assert np.all(img_src.shape[:2]==img_targ.shape[:2]), "Source and normalized imaged have different size"
-    
-    if is_true(mask_incl):
-        mask_incl=np.logical_not(mask_white(img_src, min_rgb=min_rgb, max_diff=max_diff, erosion=erosion))
-    if is_true(mask_excl):
-        mask_excl=mask_white(img_src, min_rgb=min_rgb, max_diff=max_diff, erosion=erosion)
-    
-    if mask_excl is not None:
-        assert np.all(img_src.shape[:2]==mask_excl.shape), "Mask_exclude has different size"
-    
-    if mask_incl is not None:
-        assert np.all(img_src.shape[:2]==mask_incl.shape), "Mask_include has different size"
-    
-    newdim=np.prod(img_src.shape[:2])
-    
-    thumb_arr3=np.float32(image255(img_src)).reshape((newdim, 3))
-    norm2_arr3=np.float32(image255(img_targ)).reshape((newdim, 3))
-    
-    if mask_incl is None and mask_excl is None:
-        mask_regr=np.full(newdim, True)
-    elif mask_excl is None:
-        mask_regr=(mask_incl>0).reshape(newdim)
-    elif mask_incl is None:
-        mask_regr=np.logical_not(mask_excl).reshape(newdim)
-    else:
-        mask_regr=np.logical_and(mask_incl, np.logical_not(mask_excl)).reshape(newdim)
-    
-    thumb_arr4=255.0-thumb_arr3[mask_regr, :]
-    norm2_arr4=255.0-norm2_arr3[mask_regr, :]
-    #thumb_arr5=np.c_[thumb_arr4, np.square(thumb_arr4)]
-    regressor2 = LinearRegression(fit_intercept=False)
-    regressor2.fit(thumb_arr4, norm2_arr4)
-    
-    LR_RGBw=regressor2.coef_.T
-    return(LR_RGBw)
+import scipy
+#from skimage import morphology
+import skimage.morphology
+import warnings
 
-def img2normw2(img, LR_RGBw):
-    imgw=255.0-np.float32(image255(img))
-    imgw3=imgw.reshape(-1, 3)
-    im10norm=np.matmul(imgw3, LR_RGBw)
-    im10norm[im10norm<0]=0
-    im10norm[im10norm>255]=255
-    im10norm2=(255.0-im10norm).reshape(img.shape).astype(np.uint8)    
-    return(im10norm2)
+def otsu_filter(channel, gaussian_blur=True):
+    """Otsu filter."""
+    if gaussian_blur:
+        channel = cv2.GaussianBlur(channel, (5, 5), 0)
+    channel = channel.reshape((channel.shape[0], channel.shape[1]))
+    
+    return cv2.threshold(
+        channel, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+def detect_tissue0(slide, sensitivity = 3000):
+    slide = np.array(slide)[:, :, :3]
+    
+    # Convert from RGB to HSV color space
+    slide_hsv = cv2.cvtColor(slide, cv2.COLOR_BGR2HSV)
+    
+    # Compute optimal threshold values in each channel using Otsu algorithm
+    _, saturation, _ = np.split(slide_hsv, 3, axis=2)
+    
+    mask = otsu_filter(saturation, gaussian_blur=True)
+    
+    # Make mask boolean
+    mask = mask != 0
+    
+    mask = skimage.morphology.remove_small_holes(mask, area_threshold=sensitivity)
+    mask = skimage.morphology.remove_small_objects(mask, min_size=sensitivity)
+    
+    mask = mask.astype(np.uint8)
+    
+    return mask
