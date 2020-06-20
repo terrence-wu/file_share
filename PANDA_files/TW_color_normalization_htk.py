@@ -1,5 +1,6 @@
 ## Most codes from HistomicsTK
-## By TW on 2020-06-19
+## By TW on 2020-06-20
+__version__ = 'TW_color_normalization_htk.py: 2020/06/20'
 
 import os
 import sys
@@ -14,7 +15,6 @@ import matplotlib.pyplot as plt
 from  sklearn.linear_model import LinearRegression
 
 # import_module1('~/TW_python/TW_color_normalization_htk.py', 'CN')
-__version__ = 'TW_color_normalization_htk.py: 2020/06/19'
 
 def import_module1(pkgname, return_module=False):
     #import os
@@ -829,6 +829,12 @@ def saveimg(ofn, img):
         cv2.imwrite(ofn, img)
     else:
         cv2.imwrite(ofn, (255*img).astype(np.uint8))
+
+def readimg(ifn):
+    ifn=os.path.expanduser(ifn)
+    img=plt.imread(ifn)
+    img2=image255(img).astype(np.uint8)
+    return img2
 
 def is_true(v):
     return(isinstance(v, bool) and v==True)
