@@ -1,5 +1,5 @@
 ## Most codes from HistomicsTK
-## By TW on 2020-06-19
+## By TW on 2020-06-20
 
 import os
 import sys
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from  sklearn.linear_model import LinearRegression
 
 # import_module1('~/TW_python/TW_color_normalization_htk.py', 'CN')
-__version__ = 'TW_color_normalization_htk.py: 2020/06/19'
+__version__ = 'TW_color_normalization_htk.py: 2020/06/20'
 
 def import_module1(pkgname, return_module=False):
     #import os
