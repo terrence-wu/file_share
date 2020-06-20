@@ -1,5 +1,5 @@
 ## Most codes from HistomicsTK
-## By TW on 2020-06-20
+## By TW on 2020-06-19
 
 import os
 import sys
@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from  sklearn.linear_model import LinearRegression
 
 # import_module1('~/TW_python/TW_color_normalization_htk.py', 'CN')
-__version__ = 'TW_color_normalization_htk.py: 2020/06/20'
+__version__ = 'TW_color_normalization_htk.py: 2020/06/19'
 
 def import_module1(pkgname, return_module=False):
     #import os
@@ -114,7 +114,7 @@ _lms2rgb = np.linalg.inv(_rgb2lms)
 _lab2lms = np.linalg.inv(_lms2lab)
 
 from sklearn.linear_model import LinearRegression
-def TW_img2LR2(img_src, mask_excl=None):
+def TW_img2LR2(img_src, mask_excl=None, iter=1):
     if mask_excl is None or is_true(mask_excl):
         mask_otsu=detect_tissue0(img_src)
         mask_bgnd=mask_white(img_src)
@@ -124,9 +124,30 @@ def TW_img2LR2(img_src, mask_excl=None):
     else:
         #print("Exclusion mask (background) area: %5.3f"%(mask_excl>0).mean())
         pass
+    if np.logical_not(mask_excl).sum()<30:
+        return np.array([])
     img_deconv = deconvolution_based_normalization(img_src, mask_out=mask_excl)
+    for ii in np.arange(1, iter):
+        img_deconv = deconvolution_based_normalization(img_deconv, mask_out=mask_excl)
     LR_RGBw=image_normal_LR2(img_src, img_deconv, mask_excl=mask_excl)
     return LR_RGBw
+
+def TW_img2norm_deconv(img_src, mask_excl=None, iter=1):
+    if mask_excl is None or is_true(mask_excl):
+        mask_otsu=detect_tissue0(img_src)
+        mask_bgnd=mask_white(img_src)
+        mask_excl=np.logical_and(mask_bgnd, np.logical_not(mask_otsu))
+    if is_false(mask_excl):
+        mask_excl=None
+    else:
+        #print("Exclusion mask (background) area: %5.3f"%(mask_excl>0).mean())
+        pass
+    if np.logical_not(mask_excl).sum()<30:
+        return np.array([])
+    img_deconv = deconvolution_based_normalization(img_src, mask_out=mask_excl)
+    for ii in np.arange(1, iter):
+        img_deconv = deconvolution_based_normalization(img_deconv, mask_out=mask_excl)
+    return img_deconv
 
 def TW_imgLRw2norm(img, LR_RGBw):
     imgw=255.0-np.float32(image255(img))
@@ -869,3 +890,39 @@ def read_tiff(ifn, is_mask=False, lvl=None):
     wsi.close()
     return(img1)
 
+def fig_show(arr, title='', dpi=150):
+    plt.rcParams['figure.dpi']=dpi
+    if isinstance(arr, PIL.Image.Image):
+        _=plt.imshow(arr)
+    elif arr.ndim==2:
+        _=plt.imshow(arr, cmap=plt.cm.binary)
+    else:
+        _=plt.imshow(image255(arr))
+    if title is not None and title != '':
+        plt.title(str(title))
+    plt.show()
+
+def figs_show(arrs, titles=[], ncol=3, dpi=150, wspace=0.5, hspace=0.4):
+    plt.rcParams['figure.dpi']=dpi
+    nfig=len(arrs)
+    if isinstance(titles, str):
+        titles=[titles]
+    nrow=1+(nfig-1)//ncol
+    #f = plt.figure(figsize=(9, 13))    
+    f = plt.figure()
+    plt.subplots_adjust(hspace=hspace, wspace=wspace)
+    ax = []
+    for ii in range(nfig):
+        ax.append( f.add_subplot(nrow, ncol, ii + 1) )
+        arr=arrs[ii]
+        if isinstance(arr, PIL.Image.Image):
+            _=plt.imshow(arr)
+        elif arr.ndim==2:
+            _=plt.imshow(arr, cmap=plt.cm.binary)
+        else:
+            _=plt.imshow(image255(arr))
+        if ii<len(titles):
+            title1=titles[ii]
+            if title1 is not None and title1 != '':
+                ax[-1].set_title(str(title1))
+    plt.show(block=True)
