@@ -254,6 +254,13 @@ except:
 
 print("work_lvl =", str(work_lvl))
 
+TRAIN_step2_flag=False
+TEST_step2_flag=True
+
+if len(sys.argv)>=3 and sys.argv[2]=='train':
+    TRAIN_step2_flag=True
+    print("TRAIN_step2_flag == True")
+
 mask_fr_min0=0.25
 
 Nmax=100  ## filter top area
@@ -846,8 +853,6 @@ if len(os.listdir(TEST_IMAGES))==0 and Random_testing:
 
 ###
 
-TRAIN_step2_flag=False
-
 if TRAIN_step2_flag:
     train_images=[os.path.basename(ff) for ff in glob(os.path.join(TRAIN_IMAGES, '*.tiff'))]
     train_masks=[os.path.basename(ff) for ff in glob(os.path.join(TRAIN_MASKS, '*.tiff'))]
@@ -877,38 +882,50 @@ if TRAIN_step2_flag:
         mkdir(TRJPG0B)
     mkdir(TRLRB)
     mkdir(TRTNB)
+    print(TRAIN_IMAGES)
+    
+    w_uuids=train_work_uuids
+    
+    iii=0
+    for iii in np.arange(iii, len(w_uuids)):
+        uuid=str(w_uuids[iii])
+        print(  '%g / %g: %s' % (iii, len(w_uuids), uuid )  )
+        try:
+            _ = tr_uuid2tiles5(uuid, verbose=False, forced=False, image_lvl=work_lvl)
+        except:
+            print("iii==%g, TRAIN uuid %s failed."%(iii, uuid))
+        gc.collect()
+        gc.collect()
 
 ###
 
-test_images=[os.path.basename(ff) for ff in glob(os.path.join(TEST_IMAGES, '*.tiff'))]
-test_images.sort()
-print( len(test_images))
-
-test_images_uuids=[re.sub('.tiff$', '', ff) for ff in test_images]
-
-if work_lvl is None or work_lvl==1:
-    mkdir(TEJPG1B)
-if work_lvl is None or work_lvl==0:
-    mkdir(TEJPG0B)
-mkdir(TELRB)
-mkdir(TETNB)
-
-
-print(TEST_IMAGES)
-
-w_uuids=test_uuids
-work_lvl=0
-
-iii=0
-for iii in np.arange(iii, len(w_uuids)):
-    uuid=str(w_uuids[iii])
-    print(  '%g / %g: %s' % (iii, len(w_uuids), uuid )  )
-    try:
-        _ = te_uuid2tiles5(uuid, verbose=False, forced=False, image_lvl=work_lvl)
-    except:
-        print("iii==%g, TEST uuid %s failed."%(iii, uuid))
-    gc.collect()
-    gc.collect()
+if TEST_step2_flag:
+    test_images=[os.path.basename(ff) for ff in glob(os.path.join(TEST_IMAGES, '*.tiff'))]
+    test_images.sort()
+    print( len(test_images))
+    
+    test_images_uuids=[re.sub('.tiff$', '', ff) for ff in test_images]
+    
+    if work_lvl is None or work_lvl==1:
+        mkdir(TEJPG1B)
+    if work_lvl is None or work_lvl==0:
+        mkdir(TEJPG0B)
+    mkdir(TELRB)
+    mkdir(TETNB)
+    print(TEST_IMAGES)
+    
+    w_uuids=test_uuids
+    
+    iii=0
+    for iii in np.arange(iii, len(w_uuids)):
+        uuid=str(w_uuids[iii])
+        print(  '%g / %g: %s' % (iii, len(w_uuids), uuid )  )
+        try:
+            _ = te_uuid2tiles5(uuid, verbose=False, forced=False, image_lvl=work_lvl)
+        except:
+            print("iii==%g, TEST uuid %s failed."%(iii, uuid))
+        gc.collect()
+        gc.collect()
 
 del(TN_model)
 del(GL_model)
