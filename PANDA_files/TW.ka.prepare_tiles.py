@@ -76,6 +76,7 @@ except:
 
 print("work_lvl =", str(work_lvl))
 
+TEST_step2_flag=True
 TRAIN_step2_flag=False
 try:
     TRAIN_step2_flag=options.training_flag
