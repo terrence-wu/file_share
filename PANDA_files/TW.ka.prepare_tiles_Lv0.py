@@ -28,6 +28,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--version', action='version', version=ver+'.0', help=argparse.SUPPRESS)
 
 parser.add_argument("--training", dest='training_flag', action='store_true', default=False, help="save tiles for training data")
+parser.add_argument("-v", "--verbose", dest='verbose', action='store_true', default=False, help="verbose mode")
 
 parser.add_argument("-l", "--lvl", "--level", dest='level', metavar='0', type=int,
             default=0, help="working level of WSI tiff")
@@ -65,6 +66,12 @@ parser.add_argument("--seed", dest='seed', metavar="123456", type=int,
 options = parser.parse_args(args)
 
 SEED=options.seed
+
+verbose=False
+try:
+    verbose=options.verbose
+except:
+    pass
 
 work_lvl=None
 try:
@@ -985,7 +992,6 @@ if TRAIN_step2_flag:
 ###
 
 if TEST_step2_flag:
-    verbose=False
     test_images=[os.path.basename(ff) for ff in glob(os.path.join(TEST_IMAGES, '*.tiff'))]
     test_images.sort()
     print( len(test_images))
@@ -1009,7 +1015,7 @@ if TEST_step2_flag:
         uuid=str(w_uuids[iii])
         print(  '%g / %g: %s' % (iii, len(w_uuids), uuid )  )
         try:
-            final = te_uuid2tiles5(uuid, verbose=False, forced=True, image_lvl=work_lvl, return_img=True, save_img=False)
+            final = te_uuid2tiles5(uuid, verbose=verbose, forced=True, image_lvl=work_lvl, return_img=True, save_img=False)
             imgs0=np.array(final[2])
             nfinal=len(imgs0)
             if verbose:
