@@ -1032,6 +1032,8 @@ if TEST_step2_flag:
                 uuids=[uuid]*len(preds2)
                 all_uuids.extend(uuids)
                 all_preds.extend(preds2)
+            elif verbose:
+                print([])
         except:
             print("iii==%g, TEST uuid %s failed."%(iii, uuid))
         gc.collect()
