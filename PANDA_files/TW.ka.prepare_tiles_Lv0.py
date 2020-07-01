@@ -1013,7 +1013,7 @@ if TEST_step2_flag:
     iii=0
     for iii in np.arange(iii, len(w_uuids)):
         uuid=str(w_uuids[iii])
-        print(  '%g / %g: %s' % (iii, len(w_uuids), uuid )  )
+        print(  '\n%g / %g: %s' % (iii, len(w_uuids), uuid )  )
         try:
             final = te_uuid2tiles5(uuid, verbose=verbose, forced=True, image_lvl=work_lvl, return_img=True, save_img=False)
             imgs0=np.array(final[2])
@@ -1028,7 +1028,7 @@ if TEST_step2_flag:
                 preds=np.array(preds).reshape((-1,))
                 preds2=[round(vv, 4) for vv in preds]
                 if verbose:
-                    print(preds2)
+                    print([round(vv, 1) for vv in np.quantile(preds, [0.5, 0.75, 0.8, 0.9])])
                 uuids=[uuid]*len(preds2)
                 all_uuids.extend(uuids)
                 all_preds.extend(preds2)
