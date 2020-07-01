@@ -1040,6 +1040,7 @@ if TEST_step2_flag:
     save_csv=pd.DataFrame(np.c_[np.array(all_uuids)], columns=['image_id'])
     save_csv['prediction']=np.array(all_preds)
     save_csv.to_csv(TEST_PRED_CSV, index=False)
+    print('')
     print(save_csv.shape)
     print(save_csv.head())
 
