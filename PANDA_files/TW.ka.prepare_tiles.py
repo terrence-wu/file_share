@@ -29,7 +29,7 @@ parser.add_argument('--version', action='version', version=ver+'.0', help=argpar
 
 parser.add_argument("--training", dest='training_flag', action='store_true', default=False, help="save tiles for training data")
 
-parser.add_argument("-l", "--lvl", "--work_lvl", dest='level', metavar='None', type=int,
+parser.add_argument("-l", "--lvl", "--level", dest='level', metavar='None', type=int,
             default=None, help="working level of WSI tiff")
 
 parser.add_argument("--mask_fr_min", dest='mask_fr_min0', metavar='0.25', type=float,
