@@ -1027,12 +1027,11 @@ if TEST_step2_flag:
                 print(preds.shape)
                 preds=np.array(preds).reshape((-1,))
                 preds2=[round(vv, 4) for vv in preds]
-                if verbose:
-                    print([round(vv, 1) for vv in np.quantile(preds, [0.5, 0.75, 0.8, 0.9])])
+                print([round(vv, 1) for vv in np.quantile(preds, [0.5, 0.75, 0.8, 0.9])])
                 uuids=[uuid]*len(preds2)
                 all_uuids.extend(uuids)
                 all_preds.extend(preds2)
-            elif verbose:
+            else:
                 print([])
         except:
             print("iii==%g, TEST uuid %s failed."%(iii, uuid))
