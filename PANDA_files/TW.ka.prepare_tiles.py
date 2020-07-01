@@ -12,6 +12,105 @@ import gc
 import shutil
 import openslide
 import albumentations as albu
+import argparse
+
+
+args = sys.argv[1:]
+import argparse
+
+ver='1'
+parser = argparse.ArgumentParser(
+                prog='PRAD.ka.prepare_tiles.v%s.py' % ver, 
+                description="PRAD histological imaging and ISUP grading for kaggle", 
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                add_help=True)
+
+parser.add_argument('--version', action='version', version=ver+'.0', help=argparse.SUPPRESS)
+
+parser.add_argument("--training", dest='training_flag', action='store_true', default=False, help="save tiles for training data")
+
+parser.add_argument("-l", "--lvl", "--work_lvl", dest='level', metavar='None', type=int,
+            default=None, help="working level of WSI tiff")
+
+parser.add_argument("--mask_fr_min", dest='mask_fr_min0', metavar='0.25', type=float,
+            default=0.25, help="mask_fr_min0")
+
+parser.add_argument("--Nmax", "--nmax", dest='nmax', metavar='100', type=int,
+            default=100, help="filter tiles with larger unmapped area")
+
+parser.add_argument("--N0", "--n0", dest='n0', metavar='80', type=int,
+            default=80, help="select top image signals as step2 training")
+
+parser.add_argument("--N1", "--n1", dest='n1', metavar='48', type=int,
+            default=48, help="select top TN scores")
+
+#parser.add_argument("--N2", "--n2", dest='n2', metavar='32', type=int,
+#            default=32, help="select top GL scores")
+
+parser.add_argument("--N3", "--n3", dest='n3', metavar='16', type=int,
+            default=16, help="select top GL*TN scores")
+
+parser.add_argument("--N3min0", "--n3min0", dest='n3min0', metavar='3', type=int,
+            default=3, help="minimal number of selected images")
+
+parser.add_argument("-m", "--model_dir", dest='model_dir', metavar="model_dir", type=str, 
+            default='../input/pretrained-models/prev_model', help="pretrained model folder")
+
+parser.add_argument("-r", "--resource_dir", dest='resource_dir', metavar="resource_dir", type=str, 
+            default='../input/tw-resources-modules/resources', help="resource and scripts folder")
+
+parser.add_argument("--seed", dest='seed', metavar="123456", type=int, 
+            default=123456, help="seed number for RND")
+
+options = parser.parse_args(args)
+
+SEED=options.seed
+
+work_lvl=None
+try:
+    work_lvl=options.level
+    if work_lvl is not None:
+        work_lvl=int(float(work_lvl))
+except:
+    pass
+
+print("work_lvl =", str(work_lvl))
+
+TRAIN_step2_flag=False
+try:
+    TRAIN_step2_flag=options.training_flag
+except:
+    pass
+
+SCRIPTS=options.resource_dir
+if SCRIPTS=='':
+    SCRIPTS=os.path.dirname(sys.argv[0])
+print("resource_dir =", SCRIPTS)
+
+PRETRAINED=options.model_dir
+print("previous model_dir =", PRETRAINED)
+
+
+
+mask_fr_min0=0.25
+
+Nmax=100  ## filter top area
+N0=80  ## select top image signals as step2 training
+N1=48  ## filter top TN scores
+N2=32  ## filter top GL scores
+N3=16  ## filter top GL scores
+N3min0=3
+
+mask_fr_min0=options.mask_fr_min0
+Nmax=options.nmax 
+N0=options.n0 
+N1=options.n1 
+#N2=options.n2 
+N3=options.n3 
+N3min0=options.n3min0
+
+print(mask_fr_min0, Nmax, N0, N1, N3, N3min0)
+
 
 def import_module1(pkgname, return_module=False):
     if os.path.dirname(pkgname)=='':
@@ -80,19 +179,13 @@ def run_cmd(cmd, output=False):
         else:
             return out.splitlines()
 
-WORKDIR='/kaggle/working'
-try:
-    WORKDIR=os.path.expanduser(WORKDIR)
-    os.chdir(WORKDIR)
-except:
-    WORKDIR='~/kaggle/working'
-    WORKDIR=os.path.expanduser(WORKDIR)
-    os.chdir(WORKDIR)
+#WORKDIR='/kaggle/working'
+WORKDIR=os.getcwd()
 
-print(os.getcwd())
+WORKDIR=os.path.expanduser(WORKDIR)
 
-SCRIPTS='/kaggle/input/tw-resources-modules-v1/resources'
-os.listdir(SCRIPTS)
+print("WORKDIR = %s"%WORKDIR)
+
 
 execfile(os.path.join(SCRIPTS, 'TW.ka.common.func.py'))
 
@@ -140,9 +233,6 @@ efficientnet.init_keras_custom_objects()
 efficientnet.init_tfkeras_custom_objects()
 
 from efficientnet.model import EfficientNetB4, EfficientNetB3, EfficientNetB1
-
-PRETRAINED='/kaggle/input/pretrained-models/prev_model'
-printdir(PRETRAINED)
 
 GL_model_fn=os.path.join(PRETRAINED, 'PRAD_GL_effB4.sz128_Lv1.hdf5')
 TN_model_fn=os.path.join(PRETRAINED, 'PRAD_TN_effB4_sigmoid.sz128_Lv1.hdf5')
@@ -246,29 +336,6 @@ def select_large(val, N, pre=None):
     return(thr)
 
 ####
-work_lvl=None
-try:
-    work_lvl=int(float(sys.argv[1]))
-except:
-    pass
-
-print("work_lvl =", str(work_lvl))
-
-TRAIN_step2_flag=False
-TEST_step2_flag=True
-
-if len(sys.argv)>=3 and sys.argv[2]=='train':
-    TRAIN_step2_flag=True
-    print("TRAIN_step2_flag == True")
-
-mask_fr_min0=0.25
-
-Nmax=100  ## filter top area
-N0=80  ## select top image signals as step2 training
-N1=48  ## filter top TN scores
-N2=32  ## filter top GL scores
-N3=16  ## filter top GL scores
-N3min0=3
 
 def ind2pos(ii, sztile, nX):
     iYX=np.array([ii//nX, ii%nX])
@@ -331,7 +398,7 @@ def img2bestcut(img1, pstep=None, szcut=None, plot=False):
     return(ii, py, px)
 
 def uuid2tiles5(uuid, input_dir, output1_dir, output0_dir, LRdir, TNdir, return_img=False,
-    ref_csv=None, testing_mode=False, verbose=True, sztile1=128, sztile0=256):
+    ref_csv=None, testing_mode=False, verbose=True, sztile1=128, sztile0=256, save_img=True):
     
     if testing_mode:
         N3min=2
@@ -646,21 +713,23 @@ def uuid2tiles5(uuid, input_dir, output1_dir, output0_dir, LRdir, TNdir, return_
         if verbose:
             print("n1G =", n1G)
         ##szhalf=int(sztile1*4-sztile0)//2
-        if output1_dir is not None:
-            if n1G < N3min: #nTiles
-                UDIR1=os.path.join(output1_dir, uuid+"_X%03g"%nTiles)
-            else:
-                UDIR1=os.path.join(output1_dir, uuid+"_H%03g"%nTiles)
-            mkdir(UDIR1)
+        if save_img:
+            if output1_dir is not None:
+                if n1G < N3min: #nTiles
+                    UDIR1=os.path.join(output1_dir, uuid+"_X%03g"%nTiles)
+                else:
+                    UDIR1=os.path.join(output1_dir, uuid+"_H%03g"%nTiles)
+                mkdir(UDIR1)
+            
+            if output0_dir is not None:
+                if n1G < N3min: #nTiles
+                    UDIR0=os.path.join(output0_dir, uuid+"_X%03g"%nTiles)
+                else:
+                    UDIR0=os.path.join(output0_dir, uuid+"_H%03g"%nTiles)
+                mkdir(UDIR0)
         
-        if output0_dir is not None:
-            if n1G < N3min: #nTiles
-                UDIR0=os.path.join(output0_dir, uuid+"_X%03g"%nTiles)
-            else:
-                UDIR0=os.path.join(output0_dir, uuid+"_H%03g"%nTiles)
-            mkdir(UDIR0)
-        
-        if n1G>0:
+        img0norm=[]
+        if n1G>0 and output0_dir is not None:
             wsi=openslide.OpenSlide(ifn)
             for jj in np.arange(n1G):
                 imm1=img1G[jj]
@@ -671,32 +740,40 @@ def uuid2tiles5(uuid, input_dir, output1_dir, output0_dir, LRdir, TNdir, return_
                 TN1=TN_scores_1G[jj]
                 GL1=GL_scores_1G[jj]
                 if output1_dir is not None:
-                    img1_fn=os.path.join(UDIR1, "%s.Lv%gSz%03g.i%03g.y%05g_x%05g_TN%5.3f_GL%4.2f.jpg"%(uuid, 1, sztile1, jj, pY1, pX1, TN1, GL1))
-                    saveimg(img1_fn, imm1)
-                else:
-                    img1_fn=''
+                    if save_img:
+                        img1_fn=os.path.join(UDIR1, "%s.Lv%gSz%03g.i%03g.y%05g_x%05g_TN%5.3f_GL%4.2f.jpg"%(uuid, 1, sztile1, jj, pY1, pX1, TN1, GL1))
+                        saveimg(img1_fn, imm1)
+                
                 if output0_dir is not None:
                     region0=np.asarray(wsi.read_region( [pX2, pY2], 0, [sztile0, sztile0] ))[:,:,:3]
                     region0norm=CN.img2normw2(region0, LRw2)
-                    img0_fn=os.path.join(UDIR0, "%s.Lv%gSz%03g.i%03g.y%05g_x%05g_TN%5.3f_GL%4.2f.jpg"%(uuid, 0, sztile0, jj, pY2, pX2, TN1, GL1))
-                    saveimg(img0_fn, region0norm)
-                else:
-                    img0_fn=''
+                    img0norm.append(region0norm)
+                    if save_img:
+                        img0_fn=os.path.join(UDIR0, "%s.Lv%gSz%03g.i%03g.y%05g_x%05g_TN%5.3f_GL%4.2f.jpg"%(uuid, 0, sztile0, jj, pY2, pX2, TN1, GL1))
+                        saveimg(img0_fn, region0norm)
             
             wsi.close()
-            if return_img:
-                final=img1G
             if verbose:
                 print('')
-                print(uuid)
-                if dir_exists(UDIR1):
-                    print(len(os.listdir(UDIR1)))
-                if dir_exists(UDIR0):
-                    print(len(os.listdir(UDIR0)))
+                print(uuid, len(img0norm))
+        elif output1_dir is not None:
+            for jj in np.arange(n1G):
+                imm1=img1G[jj]
+                pY1, pX1=LTpos1G_GL[jj, :]
+                TN1=TN_scores_1G[jj]
+                GL1=GL_scores_1G[jj]
+                img1_fn=os.path.join(UDIR1, "%s.Lv%gSz%03g.i%03g.y%05g_x%05g_TN%5.3f_GL%4.2f.jpg"%(uuid, 1, sztile1, jj, pY1, pX1, TN1, GL1))
+                saveimg(img1_fn, imm1)
+            if verbose:
+                print('')
+                print(uuid, n1G)
+        
+        if return_img:
+            final=(uuid, np.array(img1G), np.array(img0norm))
         return final
         ## End
 
-def tr_uuid2tiles5(uuid, verbose=False, image_lvl=None, forced=False, return_img=False):
+def tr_uuid2tiles5(uuid, verbose=False, image_lvl=None, forced=False, return_img=False, save_img=True):
         gc.collect()
         gc.collect()
         if forced:
@@ -723,7 +800,7 @@ def tr_uuid2tiles5(uuid, verbose=False, image_lvl=None, forced=False, return_img
             print(uuid, len(os.listdir(TRJPG0B)))
         return final
 
-def te_uuid2tiles5(uuid, verbose=False, image_lvl=None, forced=False, return_img=False):
+def te_uuid2tiles5(uuid, verbose=False, image_lvl=None, forced=False, return_img=False, save_img=True):
         gc.collect()
         gc.collect()
         if forced:
@@ -769,9 +846,6 @@ import random
 set_seed_all(SEED, verbose=True)
 
 ####
-
-WORKDIR='/kaggle/working'
-os.chdir(os.path.expanduser(WORKDIR))
 
 INPUT_DIR1='../input'
 INPUT_DIR1=os.path.expanduser(INPUT_DIR1)
@@ -933,5 +1007,4 @@ gc.collect()
 gc.collect()
 
 print("prepare tiles done")
-
 
