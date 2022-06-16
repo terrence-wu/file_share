@@ -1,1 +1,26 @@
-Two zip files
+# This site contains two packages used in the Melanoma cell line paper (MS3 project)
+
+## MIR_Quantification_pipeline_TerrenceWu.zip
+### The pipeline used to calculate miRNA counts and RPM from individual .fastq files
+### Instruction:
+###        Unzip the package
+###        Follow the steps in README
+###
+
+## NatComm.Melanoma.Fig3C.zip
+### The pipeline used to plot copy number segmental map (Fig 3C) 
+###   and performing Comparative Differential Copy Number Analysis.
+###
+### Instruction:
+###        Unzip the package
+###        chdir to the decompressed folder
+###        Run script.Fig3C.MS3_segmap.R
+###
+### Output:
+###        Fig3C.celllines.segmap.map.pdf
+###
+### Notes:
+###        The script will install a custom library (CompGenoCN) for analysis
+###           using R source package: "CompGenoCN_0.0.4.tar.gz" in the zip file
+###
+
