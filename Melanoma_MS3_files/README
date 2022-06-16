@@ -1,7 +1,7 @@
 # This site contains two packages used in the Melanoma cell line paper (MS3 project)
 
 ## MIR_Quantification_pipeline_TerrenceWu.zip
-### The pipeline used to calculate miRNA counts and RPM from individual .fastq files
+### The pipeline used to calculate mature miRNA counts and RPM from individual .fastq files
 ### Instruction:
 ###        Unzip the package
 ###        Follow the steps in README
