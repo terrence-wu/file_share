@@ -15,12 +15,16 @@
 ###        Unzip the package
 ###        chdir to the decompressed folder
 ###        Run script.Fig3C.MS3_segmap.R
+###        Command in shell:
+###            R --vanilla < script.Fig3C.MS3_segmap.R
 ###
 ### Output:
+###        MS3_CN_seg.MEL__MES.allseg.test.res.tsv 
 ###        Fig3C.celllines.segmap.map.pdf
 ###
 ### Notes:
-###        The script will install a custom library (CompGenoCN) for analysis
+###        The script will install a custom library (CompGenoCN) 
 ###           using R source package: "CompGenoCN_0.0.4.tar.gz" included in this zip file
-###
+###        Takes around 20 minutes in a standard desktop 
+### 
 
