@@ -25,6 +25,7 @@
 ### Notes:
 ###        The script will install a custom library (CompGenoCN) 
 ###           using R source package: "CompGenoCN_0.0.4.tar.gz" included in this zip file
-###        Takes around 20 minutes in a standard desktop 
+###
+###        Takes about 20 minutes in a standard desktop 
 ### 
 
