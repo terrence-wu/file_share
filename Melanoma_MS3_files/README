@@ -21,6 +21,6 @@
 ###
 ### Notes:
 ###        The script will install a custom library (CompGenoCN) for analysis
-###           using R source package: "CompGenoCN_0.0.4.tar.gz" in the zip file
+###           using R source package: "CompGenoCN_0.0.4.tar.gz" included in this zip file
 ###
 
