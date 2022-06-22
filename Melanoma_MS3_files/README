@@ -29,3 +29,19 @@
 ###        Takes about 20 minutes in a standard desktop 
 ### 
 
+## NatComm_Oncomaps.zip
+### The pipeline used to plot Mut/CN Oncomaps on MS3 and TCGA SKCM data 
+###
+### Instruction:
+###        Unzip the package
+###        chdir to the decompressed folder
+###        Run script.oncomap.MS3.R
+###        Run script.oncomap.TCGA.SKCM.R
+###        Command in shell:
+###            R --vanilla < script.oncomap.MS3.R
+###            R --vanilla < script.oncomap.TCGA.SKCM.R
+###
+### Output:
+###        example.MS3.oncomap.v2.pdf 
+###        example.TCGA.oncomap.v2.pdf 
+###
